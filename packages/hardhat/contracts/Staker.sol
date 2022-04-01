@@ -62,7 +62,7 @@ modifier stakeNotCompleted() {
     _;
   }
 
-  constructor(address exampleExternalContractAddress) public {
+   constructor(address exampleExternalContractAddress) public  {
     exampleExternalContract = ExampleExternalContract(exampleExternalContractAddress);
   }
 
@@ -79,7 +79,7 @@ modifier stakeNotCompleted() {
   // After some `deadline` allow anyone to call an `execute()` function
   //  It should either call `exampleExternalContract.complete{value: address(this).balance}()` to send all the value
   function execute() external
-    canExecute {
+    canExecute stakeNotCompleted{
       isExecuted = true;
       if(address(this).balance >= threshold) {
         exampleExternalContract.complete{value: address(this).balance}();
