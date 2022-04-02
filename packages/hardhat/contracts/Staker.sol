@@ -1,118 +1,68 @@
-//SPDX-License-Identifier: MIT
-pragma solidity 0.8.4;
-
-import "hardhat/console.sol";
-import "./ExampleExternalContract.sol";
-
+// SPDX-License-Identifier: MIT 
+pragma solidity ^0.8.4;
+ 
+import "hardhat/console.sol"; 
+import "./ExampleExternalContract.sol"; 
+ 
+ 
 contract Staker {
-
-  ExampleExternalContract public exampleExternalContract;
-
-  uint256 public constant threshold = 1 ether;
-
-  uint256 public deadline = block.timestamp + 30 seconds;
-
-  mapping ( address => uint256 ) public balances;
-
-  bool private openForWithdraw;
-
-  bool private isExecuted;
-
-  event Stake(address indexed staker, uint256 indexed amount);
-  event Withdraw(address indexed sender, uint256 amount);
-
-  modifier canStake {
-    require(block.timestamp <= deadline, "The deadline has passed!");
+ 
+  ExampleExternalContract public exampleExternalContract; 
+ 
+  uint256 public duedate = block.timestamp + 30 seconds;
+  event Stake(address indexed sender, uint256 amount); 
+  mapping(address => uint256) public userBalance; 
+  uint256 public constant minimum = 1 ether; 
+  
+  modifier stakeIncomplete() {
+    bool completed = exampleExternalContract.completed();
+    require(!completed, "staking process already completed");
     _;
   }
-
-  modifier deadlineReached() {
-  uint256 timeRemaining = timeLeft();
-    require(timeRemaining == 0, "Deadline is not reached yet");
-    _;
-}
-
-modifier deadlineRemaining() {
-  uint256 timeRemaining = timeLeft();
-  require(timeRemaining > 0, "Deadline already reched");
-  _;
-  }
-
-/*
-* @notice Modifier that require the external contract to not be completed
-*/
-modifier stakeNotCompleted() {
-  bool completed = exampleExternalContract.completed();
-  require(!completed, "staking process is already completed");
-  _;
-}
-
-  modifier canExecute {
-    require(block.timestamp > deadline && !isExecuted, "The deadline has not yet passed, or the function has already been executed!");
+  
+  modifier duedateReached( bool requireReached ) {
+    uint256 timeLeft = timeLeft();
+    if( requireReached ) {
+      require(timeLeft == 0, "Due date not reached yet");
+    } else {
+      require(timeLeft > 0, "Due date is already passed");
+    }
     _;
   }
-
-  modifier haveFunds(address _address) { 
-    require (balances[_address] > 0, "You don't have funds in the Staker contract!"); 
-    _;
-  }
-
-  modifier canWithdraw {
-    require(openForWithdraw == true || block.timestamp > deadline, "You can not withdraw your funds at the moment!");
-    _;
-  }
-
-   constructor(address exampleExternalContractAddress) public  {
+  
+  constructor(address exampleExternalContractAddress) {
     exampleExternalContract = ExampleExternalContract(exampleExternalContractAddress);
   }
 
-  // Collect funds in a payable `stake()` function and track individual `balances` with a mapping:
-  //  ( make sure to add a `Stake(address,uint256)` event and emit it for the frontend <List/> display )
-  function stake() public payable 
-    canStake {
-      balances[msg.sender] += msg.value;
-  
-      emit Stake(msg.sender, msg.value);
+  function execute() public stakeIncomplete duedateReached(false) {
+    uint256 contractBalance = address(this).balance;
+
+    // check the contract has enough ETH to reach the treshold
+    require(contractBalance >= minimum, "Minimum amount not reached");
+ 
+    (bool sent,) = address(exampleExternalContract).call{value: contractBalance}(abi.encodeWithSignature("complete()"));
+    require(sent, "exampleExternalContract.complete failed");
   }
-
-
-  // After some `deadline` allow anyone to call an `execute()` function
-  //  It should either call `exampleExternalContract.complete{value: address(this).balance}()` to send all the value
-  function execute() external
-    canExecute stakeNotCompleted{
-      isExecuted = true;
-      if(address(this).balance >= threshold) {
-        exampleExternalContract.complete{value: address(this).balance}();
-      } else {
-        openForWithdraw = true;
-      }
+ 
+  function stake() public payable stakeIncomplete duedateReached(false){
+    userBalance[msg.sender] += msg.value;
+    emit Stake(msg.sender, msg.value);
   }
-
-  // if the `threshold` was not met, allow everyone to call a `withdraw()` function
-  // Add a `withdraw(address payable)` function lets users withdraw their balance
-  function withdraw(address payable withdrawer) public deadlineReached stakeNotCompleted {
-    uint256 amount = balances[withdrawer];
-
-    // check if the user have balance to withdraw
-    require(amount > 0, "You don't have balance to withdraw");
-    // reset the balance of the user
-    balances[msg.sender] = 0;
-    // transfer balance back to user
-    (bool sent,) = withdrawer.call{value: amount}("");
-    require(sent, "Failed to send user balance back to user");
-    emit Withdraw(withdrawer, amount);
+ 
+  function withdraw() public stakeIncomplete duedateReached(true){
+    uint256 userBalances = userBalance[msg.sender]; 
+    require(userBalances > 0, "Balance too low");
+ 
+    userBalance[msg.sender] = 0; 
+    (bool sent,) = msg.sender.call{value: userBalances}("");
+    require(sent, "Transfer failed");
   }
-
-  // Add a `timeLeft()` view function that returns the time left before the deadline for the frontend
-  function timeLeft() public view returns (uint256) {
-    if(block.timestamp >= deadline) {
+ 
+  function timeLeft() public view returns (uint256 timeleft) {
+    if( block.timestamp >= duedate ) {
       return 0;
-    } else return deadline - block.timestamp;
-  }
-
-  // Add the `receive()` special function that receives eth and calls stake()
-  receive() external payable 
-    canStake {
-      stake();
+    } else {
+      return duedate - block.timestamp;
+    }
   }
 }
