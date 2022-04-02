@@ -42,18 +42,13 @@ import deployedContracts from "./contracts/hardhat_contracts.json";
 const { ethers } = require("ethers");
 /*
     Welcome to 🏗 scaffold-eth !
-
     Code:
     https://github.com/austintgriffith/scaffold-eth
-
     Support:
     https://t.me/joinchat/KByvmRe5wkR-8F_zz6AjpA
     or DM @austingriffith on twitter or telegram
-
     You should get your own Infura.io ID and put it in `constants.js`
     (this is your connection to the main Ethereum network for ENS etc.)
-
-
     🌏 EXTERNAL CONTRACTS:
     You can also bring in contract artifacts in `constants.js`
     (and then use the `useExternalContractLoader()` hook!)
@@ -260,10 +255,8 @@ function App(props) {
   const vendorETHBalance = useBalance(localProvider, vendorAddress);
   if (DEBUG) console.log("💵 vendorETHBalance", vendorETHBalance ? ethers.utils.formatEther(vendorETHBalance) : "...");
 
-  const vendorApproval = useContractReader(readContracts, "YourToken", "allowance", [
-    address, vendorAddress
-  ]);
-  console.log("🤏 vendorApproval",vendorApproval)
+  const vendorApproval = useContractReader(readContracts, "YourToken", "allowance", [address, vendorAddress]);
+  console.log("🤏 vendorApproval", vendorApproval);
 
   const vendorTokenBalance = useContractReader(readContracts, "YourToken", "balanceOf", [vendorAddress]);
   console.log("🏵 vendorTokenBalance:", vendorTokenBalance ? ethers.utils.formatEther(vendorTokenBalance) : "...");
@@ -488,28 +481,32 @@ function App(props) {
 
   const [tokenBuyAmount, setTokenBuyAmount] = useState({
     valid: false,
-    value: ''
+    value: "",
   });
   const [tokenSellAmount, setTokenSellAmount] = useState({
     valid: false,
-    value: ''
+    value: "",
   });
   const [isSellAmountApproved, setIsSellAmountApproved] = useState();
 
-  useEffect(()=>{
-    console.log("tokenSellAmount",tokenSellAmount.value)
+  useEffect(() => {
+    console.log("tokenSellAmount", tokenSellAmount.value);
     const tokenSellAmountBN = tokenSellAmount.valid ? ethers.utils.parseEther("" + tokenSellAmount.value) : 0;
-    console.log("tokenSellAmountBN",tokenSellAmountBN)
-    setIsSellAmountApproved(vendorApproval && tokenSellAmount.value && vendorApproval.gte(tokenSellAmountBN))
-  },[tokenSellAmount, readContracts])
-  console.log("isSellAmountApproved",isSellAmountApproved)
+    console.log("tokenSellAmountBN", tokenSellAmountBN);
+    setIsSellAmountApproved(vendorApproval && tokenSellAmount.value && vendorApproval.gte(tokenSellAmountBN));
+  }, [tokenSellAmount, readContracts]);
+  console.log("isSellAmountApproved", isSellAmountApproved);
 
   const ethCostToPurchaseTokens =
-    tokenBuyAmount.valid && tokensPerEth && ethers.utils.parseEther("" + tokenBuyAmount.value / parseFloat(tokensPerEth));
+    tokenBuyAmount.valid &&
+    tokensPerEth &&
+    ethers.utils.parseEther("" + tokenBuyAmount.value / parseFloat(tokensPerEth));
   console.log("ethCostToPurchaseTokens:", ethCostToPurchaseTokens);
 
   const ethValueToSellTokens =
-    tokenSellAmount.valid && tokensPerEth && ethers.utils.parseEther("" + tokenSellAmount.value / parseFloat(tokensPerEth));
+    tokenSellAmount.valid &&
+    tokensPerEth &&
+    ethers.utils.parseEther("" + tokenSellAmount.value / parseFloat(tokensPerEth));
   console.log("ethValueToSellTokens:", ethValueToSellTokens);
 
   const [tokenSendToAddress, setTokenSendToAddress] = useState();
@@ -611,7 +608,7 @@ function App(props) {
                       const newValue = e.target.value.startsWith(".") ? "0." : e.target.value;
                       const buyAmount = {
                         value: newValue,
-                        valid: /^\d*\.?\d+$/.test(newValue)
+                        valid: /^\d*\.?\d+$/.test(newValue),
                       }
                       setTokenBuyAmount(buyAmount);
                     }}
@@ -635,16 +632,11 @@ function App(props) {
                 </div>
               </Card>
             </div>
-          
-            
-            
             {/*Extra UI for buying the tokens back from the user using "approve" and "sellTokens"
-
             <Divider />
             <div style={{ padding: 8, marginTop: 32, width: 300, margin: "auto" }}>
               <Card title="Sell Tokens">
                 <div style={{ padding: 8 }}>{tokensPerEth && tokensPerEth.toNumber()} tokens per ETH</div>
-
                 <div style={{ padding: 8 }}>
                   <Input
                     style={{ textAlign: "center" }}
@@ -662,7 +654,6 @@ function App(props) {
                   <Balance balance={ethValueToSellTokens} dollarMultiplier={price} />
                 </div>
                 {isSellAmountApproved?
-
                   <div style={{ padding: 8 }}>
                     <Button
                       disabled={true}
@@ -711,8 +702,6 @@ function App(props) {
                     </Button>
                   </div>
                     }
-
-
               </Card>
             </div>
             */}
@@ -745,11 +734,9 @@ function App(props) {
             </div>
 
             {/*
-
                 🎛 this scaffolding is full of commonly used components
                 this <Contract/> component will automatically parse your ABI
                 and give you a form to interact with it locally
-
             <Contract
               name="YourContract"
               signer={userSigner}
